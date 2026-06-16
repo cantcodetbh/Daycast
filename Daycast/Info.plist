@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>51</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Daycast uses your calendar to show today and tomorrow in the widget.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Daycast uses your calendar to show today and tomorrow in the widget.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Daycast uses your location to show local weather in the widget.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.example.daycast.refresh</string>
+	</array>
+	<key>LSUIElement</key>
+	<true/>
+</dict>
+</plist>

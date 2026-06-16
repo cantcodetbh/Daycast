@@ -1,0 +1,24 @@
+.DS_Store
+.daycast-shots/
+
+# Xcode user and build state
+DerivedData/
+build/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.xcscmblueprint
+*.hmap
+
+# Keep personal Xcode settings local.
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# SwiftPM / editor noise
+.build/
+.swiftpm/
+.vscode/
+.idea/
+
+# This repository publishes Daycast only.
+Terrarium/
