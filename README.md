@@ -22,9 +22,9 @@ Daycast syncs Calendar events and local weather into a shared app-group snapshot
 
 For photo, aerial, and dynamic wallpapers, Daycast switches desktop widgets into Apple Glass while keeping the forecast art and temperature accents readable.
 
-| Sunny | Cloudy | Rain |
-| --- | --- | --- |
-| ![Sunny Apple Glass Daycast widget](docs/images/daycast-widget-glass-sunny.png) | ![Cloudy Apple Glass Daycast widget](docs/images/daycast-widget-glass-cloudy.png) | ![Rainy Apple Glass Daycast widget](docs/images/daycast-widget-glass-rain.png) |
+| Sunny | Cloudy |
+| --- | --- |
+| ![Sunny Apple Glass Daycast widget](docs/images/daycast-widget-glass-sunny.png) | ![Cloudy Apple Glass Daycast widget](docs/images/daycast-widget-glass-cloudy.png) |
 
 ## Weather States
 
