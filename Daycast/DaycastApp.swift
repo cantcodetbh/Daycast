@@ -275,6 +275,7 @@ final class DaycastSyncEngine: ObservableObject {
             let eventStore = self.eventStore
             let locationProvider = self.locationProvider
             let background = DaycastWallpaperSampler.currentBackground()
+            DaycastWidgetAppearance.ensureGlassAppearanceIfNeeded(for: background)
 
             detachedWork = Task.detached(priority: .utility) { [weak self] in
                 let result = await DaycastSyncEngine.performBackgroundSync(
@@ -392,6 +393,7 @@ final class DaycastSyncEngine: ObservableObject {
         let eventStore = self.eventStore
         let locationProvider = self.locationProvider
         let background = DaycastWallpaperSampler.currentBackground()
+        DaycastWidgetAppearance.ensureGlassAppearanceIfNeeded(for: background)
 
         syncTask = Task.detached(priority: .utility) { [weak self] in
             let result = await DaycastSyncEngine.performBackgroundSync(
@@ -868,5 +870,23 @@ enum DaycastWallpaperSampler {
         let green: Double
         let blue: Double
         let variance: Double
+    }
+}
+
+enum DaycastWidgetAppearance {
+    private static let widgetsDomain = "com.apple.widgets" as CFString
+    private static let widgetAppearanceKey = "widgetAppearance" as CFString
+    private static let glassAppearanceValue = 1
+
+    static func ensureGlassAppearanceIfNeeded(for background: DaycastWidgetBackground) {
+        guard background.style == .glass else { return }
+
+        let currentValue = CFPreferencesCopyAppValue(widgetAppearanceKey, widgetsDomain)
+        if let number = currentValue as? NSNumber, number.intValue == glassAppearanceValue {
+            return
+        }
+
+        CFPreferencesSetAppValue(widgetAppearanceKey, glassAppearanceValue as CFNumber, widgetsDomain)
+        CFPreferencesAppSynchronize(widgetsDomain)
     }
 }
