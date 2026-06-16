@@ -876,17 +876,78 @@ enum DaycastWallpaperSampler {
 enum DaycastWidgetAppearance {
     private static let widgetsDomain = "com.apple.widgets" as CFString
     private static let widgetAppearanceKey = "widgetAppearance" as CFString
-    private static let glassAppearanceValue = 1
+    private static let iconAppearanceKey = "AppleIconAppearanceTheme" as CFString
+    private static let glassWidgetAppearanceValue = 0
+    private static let appearanceChangedNotification = "AppleColorPreferencesChangedNotification" as CFString
 
     static func ensureGlassAppearanceIfNeeded(for background: DaycastWidgetBackground) {
         guard background.style == .glass else { return }
 
+        var didChange = ensureColorfulGlobalIconAppearance()
+
         let currentValue = CFPreferencesCopyAppValue(widgetAppearanceKey, widgetsDomain)
-        if let number = currentValue as? NSNumber, number.intValue == glassAppearanceValue {
-            return
+        if (currentValue as? NSNumber)?.intValue != glassWidgetAppearanceValue {
+            CFPreferencesSetAppValue(widgetAppearanceKey, NSNumber(value: glassWidgetAppearanceValue), widgetsDomain)
+            CFPreferencesAppSynchronize(widgetsDomain)
+            didChange = true
         }
 
-        CFPreferencesSetAppValue(widgetAppearanceKey, glassAppearanceValue as CFNumber, widgetsDomain)
-        CFPreferencesAppSynchronize(widgetsDomain)
+        if didChange {
+            notifyAppearanceChange()
+        }
+    }
+
+    private static func ensureColorfulGlobalIconAppearance() -> Bool {
+        guard isClearOrTintedIconAppearance(currentGlobalIconAppearance()) else { return false }
+
+        CFPreferencesSetValue(
+            iconAppearanceKey,
+            NSNumber(value: preferredColorfulIconAppearance()),
+            kCFPreferencesAnyApplication,
+            kCFPreferencesCurrentUser,
+            kCFPreferencesCurrentHost
+        )
+        CFPreferencesSynchronize(
+            kCFPreferencesAnyApplication,
+            kCFPreferencesCurrentUser,
+            kCFPreferencesCurrentHost
+        )
+        return true
+    }
+
+    private static func currentGlobalIconAppearance() -> String? {
+        let value = CFPreferencesCopyValue(
+            iconAppearanceKey,
+            kCFPreferencesAnyApplication,
+            kCFPreferencesCurrentUser,
+            kCFPreferencesCurrentHost
+        )
+        if let number = value as? NSNumber {
+            return number.stringValue
+        }
+        return value as? String
+    }
+
+    private static func isClearOrTintedIconAppearance(_ rawValue: String?) -> Bool {
+        guard let rawValue else { return false }
+        if rawValue == "3" { return true }
+
+        let normalized = rawValue.lowercased()
+        return normalized.contains("clear") || normalized.contains("tinted")
+    }
+
+    private static func preferredColorfulIconAppearance() -> Int {
+        let match = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
+        return match == .darkAqua ? 2 : 1
+    }
+
+    private static func notifyAppearanceChange() {
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDistributedCenter(),
+            CFNotificationName(appearanceChangedNotification),
+            nil,
+            nil,
+            true
+        )
     }
 }
