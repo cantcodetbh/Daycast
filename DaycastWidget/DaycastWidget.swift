@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 import WidgetKit
 
@@ -683,31 +682,13 @@ struct PosterBackground: View {
 
 struct GlassWidgetBackground: View {
     var body: some View {
-        if #available(macOS 26.0, *) {
+        ZStack {
             Rectangle()
-                .fill(.clear)
-                .glassEffect(.regular, in: Rectangle())
-        } else {
-            VisualEffectGlassBackground()
+                .fill(.ultraThinMaterial)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.42))
         }
-    }
-}
-
-struct VisualEffectGlassBackground: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.blendingMode = .behindWindow
-        view.material = .hudWindow
-        view.state = .active
-        view.isEmphasized = false
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.blendingMode = .behindWindow
-        nsView.material = .hudWindow
-        nsView.state = .active
-        nsView.isEmphasized = false
     }
 }
 
