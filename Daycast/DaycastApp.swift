@@ -275,7 +275,7 @@ final class DaycastSyncEngine: ObservableObject {
             let eventStore = self.eventStore
             let locationProvider = self.locationProvider
             let background = DaycastWallpaperSampler.currentBackground()
-            DaycastWidgetAppearance.ensureGlassAppearanceIfNeeded(for: background)
+            DaycastWidgetAppearance.apply(for: background)
 
             detachedWork = Task.detached(priority: .utility) { [weak self] in
                 let result = await DaycastSyncEngine.performBackgroundSync(
@@ -393,7 +393,7 @@ final class DaycastSyncEngine: ObservableObject {
         let eventStore = self.eventStore
         let locationProvider = self.locationProvider
         let background = DaycastWallpaperSampler.currentBackground()
-        DaycastWidgetAppearance.ensureGlassAppearanceIfNeeded(for: background)
+        DaycastWidgetAppearance.apply(for: background)
 
         syncTask = Task.detached(priority: .utility) { [weak self] in
             let result = await DaycastSyncEngine.performBackgroundSync(
@@ -878,16 +878,21 @@ enum DaycastWidgetAppearance {
     private static let widgetAppearanceKey = "widgetAppearance" as CFString
     private static let iconAppearanceKey = "AppleIconAppearanceTheme" as CFString
     private static let glassWidgetAppearanceValue = 0
+    private static let solidWidgetAppearanceValue = 1
     private static let appearanceChangedNotification = "AppleColorPreferencesChangedNotification" as CFString
 
-    static func ensureGlassAppearanceIfNeeded(for background: DaycastWidgetBackground) {
-        guard background.style == .glass else { return }
+    static func apply(for background: DaycastWidgetBackground) {
+        var didChange = false
+        if background.style == .glass {
+            didChange = ensureColorfulGlobalIconAppearance()
+        }
 
-        var didChange = ensureColorfulGlobalIconAppearance()
-
+        let desiredValue = background.style == .glass
+            ? glassWidgetAppearanceValue
+            : solidWidgetAppearanceValue
         let currentValue = CFPreferencesCopyAppValue(widgetAppearanceKey, widgetsDomain)
-        if (currentValue as? NSNumber)?.intValue != glassWidgetAppearanceValue {
-            CFPreferencesSetAppValue(widgetAppearanceKey, NSNumber(value: glassWidgetAppearanceValue), widgetsDomain)
+        if (currentValue as? NSNumber)?.intValue != desiredValue {
+            CFPreferencesSetAppValue(widgetAppearanceKey, NSNumber(value: desiredValue), widgetsDomain)
             CFPreferencesAppSynchronize(widgetsDomain)
             didChange = true
         }
