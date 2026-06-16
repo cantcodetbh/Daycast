@@ -683,7 +683,13 @@ struct PosterBackground: View {
 
 struct GlassWidgetBackground: View {
     var body: some View {
-        VisualEffectGlassBackground()
+        if #available(macOS 26.0, *) {
+            Rectangle()
+                .fill(.clear)
+                .glassEffect(.regular, in: Rectangle())
+        } else {
+            VisualEffectGlassBackground()
+        }
     }
 }
 

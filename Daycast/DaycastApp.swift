@@ -691,7 +691,7 @@ enum DaycastWallpaperSampler {
             let configurationData = firstChoice["Configuration"] as? Data,
             let configuration = try? PropertyListSerialization.propertyList(from: configurationData, options: [], format: nil) as? [String: Any]
         else {
-            return .wallpaperPaper
+            return .glass
         }
 
         if
