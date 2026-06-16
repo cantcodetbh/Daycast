@@ -682,13 +682,7 @@ struct PosterBackground: View {
 
 struct GlassWidgetBackground: View {
     var body: some View {
-        ZStack {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-
-            Rectangle()
-                .fill(Color.white.opacity(0.42))
-        }
+        Color.clear
     }
 }
 
@@ -940,6 +934,7 @@ struct DaycastWidget: Widget {
         .description("See today, tomorrow, weather, and your next useful reminder.")
         .supportedFamilies([.systemExtraLarge])
         .contentMarginsDisabled()
+        .containerBackgroundRemovable()
     }
 }
 
