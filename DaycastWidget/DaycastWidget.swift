@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import WidgetKit
 
@@ -682,8 +683,25 @@ struct PosterBackground: View {
 
 struct GlassWidgetBackground: View {
     var body: some View {
-        Rectangle()
-            .fill(.regularMaterial)
+        VisualEffectGlassBackground()
+    }
+}
+
+struct VisualEffectGlassBackground: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.blendingMode = .behindWindow
+        view.material = .hudWindow
+        view.state = .active
+        view.isEmphasized = false
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.blendingMode = .behindWindow
+        nsView.material = .hudWindow
+        nsView.state = .active
+        nsView.isEmphasized = false
     }
 }
 
