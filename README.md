@@ -2,7 +2,7 @@
 
 A macOS WidgetKit calendar and weather widget that turns the next two days into a compact desktop poster.
 
-Daycast syncs Calendar events and local weather into a shared app-group snapshot, then renders an extra-large widget with the current temperature, high/low markers, precipitation, free/busy context, and the next useful agenda items for today and tomorrow.
+Daycast syncs Calendar events and local weather into a shared app-group snapshot, then renders an extra-large widget with the current temperature, high/low markers, precipitation, free/busy context, and the next useful agenda items for today and tomorrow. It also adapts to your wallpaper: solid macOS colours are matched directly, while photo, aerial, and dynamic wallpapers use native Apple Glass.
 
 ![Daycast widget showing today and tomorrow](docs/images/daycast-widget-current.png)
 
@@ -14,6 +14,17 @@ Daycast syncs Calendar events and local weather into a shared app-group snapshot
 - Login item helper so the app can quietly restart after login and keep the widget fresh.
 - Shared app-group JSON snapshot for reliable host-app to widget handoff.
 - Poster-style weather states with SF Symbol weather art, accent colors, and high/low temperature arrows.
+- Wallpaper-aware widget backgrounds with solid-colour matching or native Apple Glass.
+- Split appearance handling so desktop widgets can use glass without forcing monochrome desktop icons.
+- Colour-preserved weather symbols and temperature accents in glass mode.
+
+## Apple Glass
+
+For photo, aerial, and dynamic wallpapers, Daycast switches desktop widgets into Apple Glass while keeping the forecast art and temperature accents readable.
+
+| Sunny | Cloudy | Rain |
+| --- | --- | --- |
+| ![Sunny Apple Glass Daycast widget](docs/images/daycast-widget-glass-sunny.png) | ![Cloudy Apple Glass Daycast widget](docs/images/daycast-widget-glass-cloudy.png) | ![Rainy Apple Glass Daycast widget](docs/images/daycast-widget-glass-rain.png) |
 
 ## Weather States
 
