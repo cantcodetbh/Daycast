@@ -41,6 +41,7 @@ struct DaycastPalette {
 
     let phase: DaycastThemePhase
     let paper: Color
+    let backgroundStyle: DaycastWidgetBackground.Style
     let ink: Color
     let secondaryInk: Color
     let divider: Color
@@ -48,12 +49,18 @@ struct DaycastPalette {
     let dividerOpacity: Double
     let iconOpacityMultiplier: Double
 
-    static func palette(for phase: DaycastThemePhase) -> DaycastPalette {
+    static func palette(
+        for phase: DaycastThemePhase,
+        background: DaycastWidgetBackground = .wallpaperPaper
+    ) -> DaycastPalette {
+        let paper = Color(red: background.red, green: background.green, blue: background.blue)
+
         switch phase {
         case .daylight:
             return DaycastPalette(
                 phase: phase,
-                paper: desktopPaper,
+                paper: paper,
+                backgroundStyle: background.style,
                 ink: Color(red: 0.07, green: 0.08, blue: 0.09),
                 secondaryInk: Color(red: 0.30, green: 0.36, blue: 0.36),
                 divider: desktopDivider,
@@ -64,7 +71,8 @@ struct DaycastPalette {
         case .goldenHour:
             return DaycastPalette(
                 phase: phase,
-                paper: desktopPaper,
+                paper: paper,
+                backgroundStyle: background.style,
                 ink: Color(red: 0.12, green: 0.10, blue: 0.08),
                 secondaryInk: Color(red: 0.38, green: 0.31, blue: 0.24),
                 divider: desktopDivider,
@@ -75,7 +83,8 @@ struct DaycastPalette {
         case .afterSunset:
             return DaycastPalette(
                 phase: phase,
-                paper: desktopPaper,
+                paper: paper,
+                backgroundStyle: background.style,
                 ink: Color(red: 0.08, green: 0.12, blue: 0.13),
                 secondaryInk: Color(red: 0.24, green: 0.31, blue: 0.32),
                 divider: desktopDivider,
@@ -86,7 +95,8 @@ struct DaycastPalette {
         case .lateNight:
             return DaycastPalette(
                 phase: phase,
-                paper: desktopPaper,
+                paper: paper,
+                backgroundStyle: background.style,
                 ink: Color(red: 0.10, green: 0.12, blue: 0.12),
                 secondaryInk: Color(red: 0.30, green: 0.36, blue: 0.36),
                 divider: desktopDivider,
@@ -161,7 +171,10 @@ struct DaycastWidgetView: View {
     let entry: DaycastEntry
 
     var body: some View {
-        let palette = DaycastPalette.palette(for: entry.snapshot.themePhase(at: entry.date))
+        let palette = DaycastPalette.palette(
+            for: entry.snapshot.themePhase(at: entry.date),
+            background: entry.snapshot.background
+        )
 
         GeometryReader { _ in
             ExtraLargePosterLayout(snapshot: entry.snapshot)
@@ -658,7 +671,15 @@ struct PosterBackground: View {
     @Environment(\.daycastPalette) private var palette
 
     var body: some View {
-        palette.paper
+        switch palette.backgroundStyle {
+        case .solid:
+            palette.paper
+        case .glass:
+            ZStack {
+                Rectangle().fill(.ultraThinMaterial)
+                palette.paper.opacity(0.34)
+            }
+        }
     }
 }
 

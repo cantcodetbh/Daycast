@@ -60,9 +60,66 @@ struct DaycastDay: Codable, Hashable {
     let nudge: String
 }
 
+struct DaycastWidgetBackground: Codable, Hashable {
+    enum Style: String, Codable {
+        case solid
+        case glass
+    }
+
+    let style: Style
+    let red: Double
+    let green: Double
+    let blue: Double
+
+    init(style: Style, red: Double, green: Double, blue: Double) {
+        self.style = style
+        self.red = red
+        self.green = green
+        self.blue = blue
+    }
+
+    static let wallpaperPaper = DaycastWidgetBackground(
+        style: .solid,
+        red: 0.957,
+        green: 0.867,
+        blue: 0.788
+    )
+
+    static let glass = DaycastWidgetBackground(
+        style: .glass,
+        red: 0.957,
+        green: 0.867,
+        blue: 0.788
+    )
+}
+
 struct DaycastSnapshot: Codable, Hashable {
     let today: DaycastDay
     let tomorrow: DaycastDay
+    let background: DaycastWidgetBackground
+
+    init(
+        today: DaycastDay,
+        tomorrow: DaycastDay,
+        background: DaycastWidgetBackground = .wallpaperPaper
+    ) {
+        self.today = today
+        self.tomorrow = tomorrow
+        self.background = background
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case today
+        case tomorrow
+        case background
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        today = try container.decode(DaycastDay.self, forKey: .today)
+        tomorrow = try container.decode(DaycastDay.self, forKey: .tomorrow)
+        background = try container.decodeIfPresent(DaycastWidgetBackground.self, forKey: .background) ?? .wallpaperPaper
+    }
 
     func applying(todayWeather: DaycastWeather, tomorrowWeather: DaycastWeather) -> DaycastSnapshot {
         DaycastSnapshot(
@@ -81,7 +138,16 @@ struct DaycastSnapshot: Codable, Hashable {
                 events: tomorrow.events,
                 focusWindow: tomorrow.focusWindow,
                 nudge: tomorrow.nudge
-            )
+            ),
+            background: background
+        )
+    }
+
+    func applying(background: DaycastWidgetBackground) -> DaycastSnapshot {
+        DaycastSnapshot(
+            today: today,
+            tomorrow: tomorrow,
+            background: background
         )
     }
 

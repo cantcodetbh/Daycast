@@ -23,7 +23,7 @@ struct RenderDaycastWidget {
         }
 
         let snapshot = isBusyPreview ? syncedSnapshot.busyPreview : syncedSnapshot
-        let palette = DaycastPalette.palette(for: snapshot.themePhase(at: Date()))
+        let palette = DaycastPalette.palette(for: snapshot.themePhase(at: Date()), background: snapshot.background)
 
         let content = ExtraLargePosterLayout(snapshot: snapshot)
             .frame(width: 720, height: 338)
@@ -79,7 +79,10 @@ struct RenderDaycastWidget {
         let content = VStack(spacing: 18) {
             ForEach(Array(pairs.enumerated()), id: \.offset) { _, pair in
                 let matrixSnapshot = snapshot.applying(todayWeather: pair.0, tomorrowWeather: pair.1)
-                let palette = DaycastPalette.palette(for: matrixSnapshot.themePhase(at: Date()))
+                let palette = DaycastPalette.palette(
+                    for: matrixSnapshot.themePhase(at: Date()),
+                    background: matrixSnapshot.background
+                )
 
                 ExtraLargePosterLayout(snapshot: matrixSnapshot)
                     .frame(width: 720, height: 338)

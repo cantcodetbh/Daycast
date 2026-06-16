@@ -2,6 +2,7 @@ import AppKit
 import BackgroundTasks
 import CoreLocation
 import EventKit
+import ImageIO
 import os
 import ServiceManagement
 import SwiftUI
@@ -273,12 +274,14 @@ final class DaycastSyncEngine: ObservableObject {
             let previous = self.currentSnapshot
             let eventStore = self.eventStore
             let locationProvider = self.locationProvider
+            let background = DaycastWallpaperSampler.currentBackground()
 
             detachedWork = Task.detached(priority: .utility) { [weak self] in
                 let result = await DaycastSyncEngine.performBackgroundSync(
                     previous: previous,
                     eventStore: eventStore,
                     locationProvider: locationProvider,
+                    background: background,
                     interimSnapshotHandler: { [weak self] snapshot in
                         guard let engine = self else { return }
                         await MainActor.run {
@@ -388,12 +391,14 @@ final class DaycastSyncEngine: ObservableObject {
         let previousSnapshot = currentSnapshot
         let eventStore = self.eventStore
         let locationProvider = self.locationProvider
+        let background = DaycastWallpaperSampler.currentBackground()
 
         syncTask = Task.detached(priority: .utility) { [weak self] in
             let result = await DaycastSyncEngine.performBackgroundSync(
                 previous: previousSnapshot,
                 eventStore: eventStore,
                 locationProvider: locationProvider,
+                background: background,
                 interimSnapshotHandler: { [weak self] snapshot in
                     guard let engine = self else { return }
                     await MainActor.run {
@@ -449,9 +454,11 @@ final class DaycastSyncEngine: ObservableObject {
         previous: DaycastSnapshot,
         eventStore: EKEventStore,
         locationProvider: DaycastLocationProvider,
+        background: DaycastWidgetBackground,
         interimSnapshotHandler: @escaping @Sendable (DaycastSnapshot) async -> Void
     ) async -> SyncOutcome {
         let calendarSnapshot = makeCalendarSnapshot(previous: previous, eventStore: eventStore)
+            .applying(background: background)
         // Persist calendar as we go so the widget always has *something*,
         // even if the weather fetch fails.
         DaycastStore.save(calendarSnapshot)
@@ -602,4 +609,191 @@ final class DaycastSyncEngine: ObservableObject {
         formatter.setLocalizedDateFormatFromTemplate("EEE, MMM d")
         return formatter
     }()
+}
+
+enum DaycastWallpaperSampler {
+    private static let solidVarianceThreshold = 0.0025
+    private static let sampleLimit = 48
+
+    @MainActor
+    static func currentBackground() -> DaycastWidgetBackground {
+        if let solidColor = solidColorFromWallpaperStore() {
+            return solidColor
+        }
+
+        guard
+            let screen = NSScreen.main ?? NSScreen.screens.first,
+            let imageURL = NSWorkspace.shared.desktopImageURL(for: screen),
+            let analysis = analyzeDesktopImage(at: imageURL)
+        else {
+            return .glass
+        }
+
+        if isSystemDesktopImage(imageURL) {
+            return .wallpaperPaper
+        }
+
+        guard analysis.variance <= solidVarianceThreshold else {
+            return .glass
+        }
+
+        return DaycastWidgetBackground(
+            style: .solid,
+            red: analysis.red,
+            green: analysis.green,
+            blue: analysis.blue
+        )
+    }
+
+    private static func isSystemDesktopImage(_ url: URL) -> Bool {
+        url.lastPathComponent == "DefaultDesktop.heic"
+    }
+
+    private static func analyzeDesktopImage(at url: URL) -> WallpaperAnalysis? {
+        guard
+            let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+            let image = CGImageSourceCreateImageAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: sampleLimit
+            ] as CFDictionary)
+        else {
+            return nil
+        }
+
+        return analyzeImage(image, sampleLimit: sampleLimit)
+    }
+
+    private static func solidColorFromWallpaperStore() -> DaycastWidgetBackground? {
+        let storeURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/com.apple.wallpaper/Store/Index.plist")
+
+        guard
+            let data = try? Data(contentsOf: storeURL),
+            let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+            let root = plist as? [String: Any],
+            let content = contentDictionary(from: root),
+            let choices = content["Choices"] as? [[String: Any]],
+            let firstChoice = choices.first,
+            firstChoice["Provider"] as? String == "com.apple.wallpaper.choice.color",
+            let configurationData = firstChoice["Configuration"] as? Data,
+            let configuration = try? PropertyListSerialization.propertyList(from: configurationData, options: [], format: nil) as? [String: Any]
+        else {
+            return nil
+        }
+
+        if
+            let customColor = configuration["customColor"] as? [String: Any],
+            let color = solidColor(from: customColor)
+        {
+            return color
+        }
+
+        if
+            let systemColor = configuration["systemColor"] as? [String: Any],
+            let name = systemColor.keys.first,
+            let color = systemWallpaperColor(named: name)
+        {
+            return color
+        }
+
+        return nil
+    }
+
+    private static func contentDictionary(from root: [String: Any]) -> [String: Any]? {
+        for key in ["AllSpacesAndDisplays", "SystemDefault"] {
+            guard
+                let section = root[key] as? [String: Any],
+                let linked = section["Linked"] as? [String: Any],
+                let content = linked["Content"] as? [String: Any]
+            else {
+                continue
+            }
+            return content
+        }
+
+        return nil
+    }
+
+    private static func solidColor(from configuration: [String: Any]) -> DaycastWidgetBackground? {
+        guard
+            let red = configuration["red"] as? Double,
+            let green = configuration["green"] as? Double,
+            let blue = configuration["blue"] as? Double
+        else {
+            return nil
+        }
+
+        return DaycastWidgetBackground(style: .solid, red: red, green: green, blue: blue)
+    }
+
+    private static func systemWallpaperColor(named name: String) -> DaycastWidgetBackground? {
+        switch name {
+        case "gold":
+            return .wallpaperPaper
+        default:
+            return nil
+        }
+    }
+
+    private static func analyzeImage(_ image: CGImage, sampleLimit: Int) -> WallpaperAnalysis? {
+        let width = image.width
+        let height = image.height
+        let bytesPerPixel = 4
+        let bytesPerRow = width * bytesPerPixel
+        var pixels = [UInt8](repeating: 0, count: height * bytesPerRow)
+
+        guard
+            let context = CGContext(
+                data: &pixels,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: bytesPerRow,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        else {
+            return nil
+        }
+
+        context.interpolationQuality = .low
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        var redTotal = 0.0
+        var greenTotal = 0.0
+        var blueTotal = 0.0
+        let count = width * height
+
+        for index in stride(from: 0, to: pixels.count, by: bytesPerPixel) {
+            redTotal += Double(pixels[index]) / 255.0
+            greenTotal += Double(pixels[index + 1]) / 255.0
+            blueTotal += Double(pixels[index + 2]) / 255.0
+        }
+
+        let red = redTotal / Double(count)
+        let green = greenTotal / Double(count)
+        let blue = blueTotal / Double(count)
+
+        var variance = 0.0
+        for index in stride(from: 0, to: pixels.count, by: bytesPerPixel) {
+            let redDelta = (Double(pixels[index]) / 255.0) - red
+            let greenDelta = (Double(pixels[index + 1]) / 255.0) - green
+            let blueDelta = (Double(pixels[index + 2]) / 255.0) - blue
+            variance += redDelta * redDelta + greenDelta * greenDelta + blueDelta * blueDelta
+        }
+
+        return WallpaperAnalysis(
+            red: red,
+            green: green,
+            blue: blue,
+            variance: variance / Double(count)
+        )
+    }
+
+    private struct WallpaperAnalysis {
+        let red: Double
+        let green: Double
+        let blue: Double
+        let variance: Double
+    }
 }
