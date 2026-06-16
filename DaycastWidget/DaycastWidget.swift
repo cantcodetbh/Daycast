@@ -132,6 +132,15 @@ struct DaycastPalette {
             return Color(red: 0.72, green: 0.80, blue: 0.78)
         }
     }
+
+    func heroIconOpacity(base: Double) -> Double {
+        switch backgroundStyle {
+        case .solid:
+            return base * iconOpacityMultiplier
+        case .glass:
+            return min(0.54, base * iconOpacityMultiplier * 2.7)
+        }
+    }
 }
 
 private struct DaycastPaletteKey: EnvironmentKey {
@@ -414,7 +423,7 @@ struct WeatherHeroSymbol: View {
             .daycastFullColorWidgetRendering()
             .font(.system(size: metrics.iconSize * weather.heroSymbolScale, weight: .medium))
             .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(weather.accentColor(in: palette).opacity(metrics.iconOpacity * palette.iconOpacityMultiplier))
+            .foregroundStyle(weather.accentColor(in: palette).opacity(palette.heroIconOpacity(base: metrics.iconOpacity)))
             .frame(width: metrics.iconFrame, height: metrics.iconFrame, alignment: .center)
             .offset(weather.heroSymbolOffset)
     }
@@ -535,15 +544,16 @@ struct HighLowTemperatureLine: View {
             Image(systemName: symbol)
                 .daycastFullColorWidgetRendering()
                 .font(.system(size: metrics.statIconSize - 1, weight: .heavy))
+                .foregroundStyle(color.opacity(0.98))
                 .frame(width: metrics.statIconSize)
 
             Text(value)
                 .font(DaycastTypography.font(size: metrics.statSize, weight: .semibold))
+                .foregroundStyle(color.opacity(0.98))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
         }
-        .foregroundStyle(color.opacity(0.95))
     }
 }
 
