@@ -145,6 +145,17 @@ extension EnvironmentValues {
     }
 }
 
+private extension Image {
+    @ViewBuilder
+    func daycastFullColorWidgetRendering() -> some View {
+        if #available(macOS 15.0, *) {
+            widgetAccentedRenderingMode(.fullColor)
+        } else {
+            self
+        }
+    }
+}
+
 struct DaycastProvider: TimelineProvider {
     func placeholder(in context: Context) -> DaycastEntry {
         DaycastEntry(date: Date(), snapshot: DaycastStore.loadSnapshot())
@@ -179,6 +190,7 @@ struct DaycastWidgetView: View {
         GeometryReader { _ in
             ExtraLargePosterLayout(snapshot: entry.snapshot)
             .foregroundStyle(palette.ink)
+            .widgetAccentable(false)
             .environment(\.daycastPalette, palette)
             .containerBackground(for: .widget) {
                 PosterBackground(weather: entry.snapshot.today.weather)
@@ -399,6 +411,7 @@ struct WeatherHeroSymbol: View {
 
     var body: some View {
         Image(systemName: weather.symbolName)
+            .daycastFullColorWidgetRendering()
             .font(.system(size: metrics.iconSize * weather.heroSymbolScale, weight: .medium))
             .symbolRenderingMode(.hierarchical)
             .foregroundStyle(weather.accentColor(in: palette).opacity(metrics.iconOpacity * palette.iconOpacityMultiplier))
@@ -443,6 +456,7 @@ struct PosterHeader: View {
 
             VStack(alignment: .trailing, spacing: metrics.metaGap) {
                 Image(systemName: today.weather.symbolName)
+                    .daycastFullColorWidgetRendering()
                     .font(.system(size: metrics.iconSize, weight: .light))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(today.weather.accentColor)
@@ -485,6 +499,7 @@ struct WeatherStatLine: View {
                 .minimumScaleFactor(0.72)
 
             Image(systemName: symbol)
+                .daycastFullColorWidgetRendering()
                 .font(.system(size: metrics.statIconSize, weight: .heavy))
                 .frame(width: metrics.statIconSize + 3)
         }
@@ -518,6 +533,7 @@ struct HighLowTemperatureLine: View {
     private func temperatureItem(symbol: String, value: String, color: Color) -> some View {
         HStack(spacing: 3) {
             Image(systemName: symbol)
+                .daycastFullColorWidgetRendering()
                 .font(.system(size: metrics.statIconSize - 1, weight: .heavy))
                 .frame(width: metrics.statIconSize)
 
@@ -568,6 +584,7 @@ struct AgendaColumn: View {
 
             HStack(spacing: 8) {
                 Image(systemName: day.weather.symbolName)
+                    .daycastFullColorWidgetRendering()
                     .font(.system(size: metrics.footerIconSize, weight: .bold))
                     .foregroundStyle(day.weather.accentColor(in: palette))
 
