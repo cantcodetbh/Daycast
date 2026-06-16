@@ -675,53 +675,15 @@ struct PosterBackground: View {
         case .solid:
             palette.paper
         case .glass:
-            GlassWidgetBackground(tint: palette.paper)
+            GlassWidgetBackground()
         }
     }
 }
 
 struct GlassWidgetBackground: View {
-    let tint: Color
-
     var body: some View {
-        ZStack {
-            Rectangle()
-                .fill(.regularMaterial)
-
-            Rectangle()
-                .fill(tint.opacity(0.10))
-
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.42),
-                    Color.white.opacity(0.18),
-                    Color.white.opacity(0.04),
-                    Color.black.opacity(0.08)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .blendMode(.softLight)
-
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.38),
-                    Color.white.opacity(0.08),
-                    Color.clear
-                ],
-                startPoint: .top,
-                endPoint: .center
-            )
-
-            Rectangle()
-                .strokeBorder(Color.white.opacity(0.28), lineWidth: 1)
-                .blendMode(.plusLighter)
-
-            Rectangle()
-                .strokeBorder(Color.black.opacity(0.10), lineWidth: 1)
-                .blur(radius: 0.8)
-                .offset(y: 1)
-        }
+        Rectangle()
+            .fill(.regularMaterial)
     }
 }
 

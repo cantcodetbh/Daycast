@@ -617,8 +617,8 @@ enum DaycastWallpaperSampler {
 
     @MainActor
     static func currentBackground() -> DaycastWidgetBackground {
-        if let solidColor = solidColorFromWallpaperStore() {
-            return solidColor
+        if let storeBackground = backgroundFromWallpaperStore() {
+            return storeBackground
         }
 
         guard
@@ -629,8 +629,8 @@ enum DaycastWallpaperSampler {
             return .glass
         }
 
-        if isSystemDesktopImage(imageURL) {
-            return .wallpaperPaper
+        if usesSystemDesktopProxy(imageURL) {
+            return .glass
         }
 
         guard analysis.variance <= solidVarianceThreshold else {
@@ -645,7 +645,7 @@ enum DaycastWallpaperSampler {
         )
     }
 
-    private static func isSystemDesktopImage(_ url: URL) -> Bool {
+    private static func usesSystemDesktopProxy(_ url: URL) -> Bool {
         url.lastPathComponent == "DefaultDesktop.heic"
     }
 
@@ -663,7 +663,7 @@ enum DaycastWallpaperSampler {
         return analyzeImage(image, sampleLimit: sampleLimit)
     }
 
-    private static func solidColorFromWallpaperStore() -> DaycastWidgetBackground? {
+    private static func backgroundFromWallpaperStore() -> DaycastWidgetBackground? {
         let storeURL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/com.apple.wallpaper/Store/Index.plist")
 
@@ -674,11 +674,20 @@ enum DaycastWallpaperSampler {
             let content = contentDictionary(from: root),
             let choices = content["Choices"] as? [[String: Any]],
             let firstChoice = choices.first,
-            firstChoice["Provider"] as? String == "com.apple.wallpaper.choice.color",
+            let provider = firstChoice["Provider"] as? String
+        else {
+            return nil
+        }
+
+        guard provider == "com.apple.wallpaper.choice.color" else {
+            return .glass
+        }
+
+        guard
             let configurationData = firstChoice["Configuration"] as? Data,
             let configuration = try? PropertyListSerialization.propertyList(from: configurationData, options: [], format: nil) as? [String: Any]
         else {
-            return nil
+            return .wallpaperPaper
         }
 
         if
