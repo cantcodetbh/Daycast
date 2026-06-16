@@ -683,6 +683,10 @@ enum DaycastWallpaperSampler {
             return .glass
         }
 
+        guard shouldGenerateGradient(from: content) != true else {
+            return .glass
+        }
+
         guard
             let configurationData = firstChoice["Configuration"] as? Data,
             let configuration = try? PropertyListSerialization.propertyList(from: configurationData, options: [], format: nil) as? [String: Any]
@@ -736,12 +740,72 @@ enum DaycastWallpaperSampler {
     }
 
     private static func systemWallpaperColor(named name: String) -> DaycastWidgetBackground? {
-        switch name {
+        switch normalizedColorName(name) {
+        case "black":
+            return solidColor(red: 0.000000, green: 0.000000, blue: 0.000000)
+        case "blueviolet":
+            return solidColor(red: 0.407843, green: 0.403922, blue: 0.686275)
+        case "cyan":
+            return solidColor(red: 0.078431, green: 0.686275, blue: 0.815686)
+        case "dustyrose":
+            return solidColor(red: 0.882353, green: 0.431373, blue: 0.474510)
+        case "electricblue":
+            return solidColor(red: 0.254902, green: 0.329412, blue: 0.839216)
+        case "gold2":
+            return solidColor(red: 0.992157, green: 0.858824, blue: 0.792157)
         case "gold":
-            return .wallpaperPaper
+            return solidColor(red: 0.949020, green: 0.870588, blue: 0.788235)
+        case "ocher":
+            return solidColor(red: 0.831373, green: 0.650980, blue: 0.337255)
+        case "plum":
+            return solidColor(red: 0.803922, green: 0.294118, blue: 0.576471)
+        case "redorange":
+            return solidColor(red: 0.917647, green: 0.243137, blue: 0.141176)
+        case "rosegold":
+            return solidColor(red: 0.964706, green: 0.827451, blue: 0.807843)
+        case "silver":
+            return solidColor(red: 0.890196, green: 0.894118, blue: 0.898039)
+        case "softpink":
+            return solidColor(red: 0.988235, green: 0.866667, blue: 0.898039)
+        case "spacegraypro":
+            return solidColor(red: 0.478431, green: 0.482353, blue: 0.501961)
+        case "spacegray":
+            return solidColor(red: 0.745098, green: 0.749020, blue: 0.768627)
+        case "stone":
+            return solidColor(red: 0.329412, green: 0.333333, blue: 0.329412)
+        case "teal":
+            return solidColor(red: 0.000000, green: 0.474510, blue: 0.450980)
+        case "turquoisegreen":
+            return solidColor(red: 0.415686, green: 0.768627, blue: 0.635294)
+        case "yellow":
+            return solidColor(red: 0.992157, green: 0.721569, blue: 0.074510)
         default:
             return nil
         }
+    }
+
+    private static func normalizedColorName(_ name: String) -> String {
+        String(name.lowercased().filter { $0.isLetter || $0.isNumber })
+    }
+
+    private static func solidColor(red: Double, green: Double, blue: Double) -> DaycastWidgetBackground {
+        DaycastWidgetBackground(style: .solid, red: red, green: green, blue: blue)
+    }
+
+    private static func shouldGenerateGradient(from content: [String: Any]) -> Bool? {
+        guard
+            let data = content["EncodedOptionValues"] as? Data,
+            let options = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
+            let values = options["values"] as? [String: Any],
+            let gradient = values["shouldGenerateGradient"] as? [String: Any],
+            let toggle = gradient["toggle"] as? [String: Any],
+            let first = toggle.values.first as? [String: Any],
+            let isOn = first["isOn"] as? Bool
+        else {
+            return nil
+        }
+
+        return isOn
     }
 
     private static func analyzeImage(_ image: CGImage, sampleLimit: Int) -> WallpaperAnalysis? {
